@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>軍人職涯薪資規劃決策支援系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* 自定義滾動條以獲得更簡潔的 UI */
+        body { background-color: #f7f9fc; }
+        .scrollable-content { max-height: calc(100vh - 8rem); overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <header class="bg-indigo-800 text-white p-4 shadow-lg sticky top-0 z-10">
+        <h1 class="text-2xl font-extrabold tracking-wide">🚀 軍人職涯財務決策支援系統</h1>
+        <p class="text-indigo-200 text-sm mt-1">空軍官校學生專用 - 穩健服役與生活平衡規劃</p>
+    </header>
+
+    <main class="flex min-h-screen">
+        <aside id="input-parameters" class="w-full lg:w-1/4 p-6 bg-white border-r border-gray-200 shadow-xl lg:min-h-screen">
+            <h2 class="text-xl font-bold mb-4 text-indigo-700">⚙️ 模擬參數設定</h2>
+            
+            <div class="mb-5 border-b pb-4">
+                <h3 class="font-semibold text-gray-700 mb-2">1. 軍旅生涯假設</h3>
+                <label for="startRank" class="block text-sm font-medium text-gray-600">起始階級 (畢業任官)</label>
+                <select id="startRank" class="mt-1 block w-full border rounded-md py-2 px-3">
+                    <option value="S2">少尉 (S2)</option>
+                    <option value="S3">中尉 (S3)</option>
+                </select>
+                <label for="serviceYears" class="block text-sm font-medium text-gray-600 mt-3">預計服役總年數</label>
+                <input type="number" id="serviceYears" value="20" min="10" max="35" class="mt-1 block w-full border rounded-md py-2 px-3">
+            </div>
+
+            <div class="mb-5 border-b pb-4">
+                <h3 class="font-semibold text-gray-700 mb-2">2. 理財策略假設</h3>
+                <label for="savingsRate" class="block text-sm font-medium text-gray-600">每月儲蓄/投資比例 (%)</label>
+                <input type="number" id="savingsRate" value="30" min="5" max="90" class="mt-1 block w-full border rounded-md py-2 px-3">
+                <label for="returnRate" class="block text-sm font-medium text-gray-600 mt-3">年化平均投資報酬率 (%)</label>
+                <input type="number" id="returnRate" value="5" min="0" max="15" step="0.1" class="mt-1 block w-full border rounded-md py-2 px-3">
+            </div>
+
+            <div class="mb-5">
+                <h3 class="font-semibold text-gray-700 mb-2">3. 支出與房貸成本</h3>
+                <label for="livingCost" class="block text-sm font-medium text-gray-600">每月基本生活支出 (元)</label>
+                <input type="number" id="livingCost" value="15000" class="mt-1 block w-full border rounded-md py-2 px-3">
+                <label for="loanRate" class="block text-sm font-medium text-gray-600 mt-3">房貸年利率假設 (%)</label>
+                <input type="number" id="loanRate" value="2.1" step="0.01" class="mt-1 block w-full border rounded-md py-2 px-3">
+            </div>
+
+            <button onclick="runSimulation()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transition duration-150">
+                🚀 執行財務決策模擬
+            </button>
+        </aside>
+
+        <section class="w-full lg:w-3/4 p-6 scrollable-content">
+            
+            <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-5 rounded-lg shadow-md border-t-4 border-indigo-500">
+                    <p class="text-sm text-gray-500">預計總資產累積 (至退休)</p>
+                    <p id="total-asset" class="text-3xl font-extrabold text-indigo-800 mt-1">--</p>
+                    <p class="text-xs text-gray-400 mt-1">含儲蓄與投資複利成果</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-md border-t-4 border-teal-500">
+                    <p class="text-sm text-gray-500">可負擔房貸總額估算</p>
+                    <p id="afford-loan" class="text-3xl font-extrabold text-teal-800 mt-1">--</p>
+                    <p class="text-xs text-gray-400 mt-1">依 20 年期房貸假設</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-md border-t-4 border-orange-500">
+                    <p class="text-sm text-gray-500">平均年淨現金流 (服役期間)</p>
+                    <p id="avg-cashflow" class="text-3xl font-extrabold text-orange-800 mt-1">--</p>
+                    <p class="text-xs text-gray-400 mt-1">扣除支出與投資後的餘裕</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h2 class="text-xl font-bold text-gray-700 mb-4">📈 薪資成長與資產累積走勢圖</h2>
+                <canvas id="financialChart"></canvas>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold text-gray-700 mb-4">💰 退休/退伍金與資產情境比較</h2>
+                <canvas id="scenarioChart"></canvas>
+            </div>
+            
+            <div id="simulation-status" class="mt-6 text-center text-lg text-red-500 font-semibold hidden">
+                請先輸入參數並點擊「執行財務決策模擬」按鈕。
+            </div>
+
+        </section>
+    </main>
+    
+    <script src="simulation.js"></script>
+</body>
+</html>
